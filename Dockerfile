@@ -3,28 +3,23 @@ FROM ubuntu:18.04
 LABEL mantainer="Read the Docs <support@readthedocs.com>"
 LABEL version="5.0.0rc1"
 
-ENV DEBIAN_FRONTEND noninteractive
 ENV APPDIR /app
 ENV LANG C.UTF-8
 
-# Versions, and expose labels for external usage
-ENV PYTHON_VERSION_27 2.7.15
-ENV PYTHON_VERSION_36 3.6.8
-ENV PYTHON_VERSION_37 3.7.2
-ENV CONDA_VERSION 4.5.12
-LABEL python.version_27=$PYTHON_VERSION_27
-LABEL python.version_36=$PYTHON_VERSION_36
-LABEL python.version_37=$PYTHON_VERSION_37
-LABEL conda.version=$CONDA_VERSION
+# UID and GID from readthedocs/user
+RUN groupadd --gid 205 docs \
+ && useradd  --gid 205 -m --uid 1005 docs
 
 # System dependencies
-RUN apt-get -y update
-RUN apt-get -y install \
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt-get -y update \
+ && apt-get -y install \
       software-properties-common \
       vim
 
 # Install requirements
-RUN apt-get -y install \
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt-get -y install \
       build-essential \
       bzr \
       curl \
@@ -61,7 +56,8 @@ RUN apt-get -y install \
 
 # pyenv extra requirements
 # https://github.com/pyenv/pyenv/wiki/Common-build-problems
-RUN apt-get install -y \
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt-get -y install \
       liblzma-dev \
       libncurses5-dev \
       libncursesw5-dev \
@@ -73,24 +69,11 @@ RUN apt-get install -y \
       wget \
       xz-utils
 
-# LaTeX -- split to reduce image layer size
-RUN apt-get -y install \
-      texlive-fonts-extra
-RUN apt-get -y install \
-      texlive-latex-extra-doc \
-      texlive-pictures-doc \
-      texlive-publishers-doc
-RUN apt-get -y install \
-      texlive-lang-english \
-      texlive-lang-japanese
-RUN apt-get -y install \
-      texlive-full
-RUN apt-get -y install \
+# Install LateX packages
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt-get -y install \
       fonts-symbola \
-      latex-cjk-chinese-arphic-bkai00mp \
-      latex-cjk-chinese-arphic-gbsn00lp \
-      latex-cjk-chinese-arphic-gkai00mp \
-      texlive-fonts-recommended
+      texlive-full
 
 # plantuml: is to support sphinxcontrib-plantuml
 # https://pypi.org/project/sphinxcontrib-plantuml/
@@ -104,73 +87,79 @@ RUN apt-get -y install \
 #
 # swig: is required for different purposes
 # https://github.com/rtfd/readthedocs-docker-images/issues/15
-RUN apt-get -y install \
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt-get -y install \
       imagemagick \
       librsvg2-bin \
       plantuml \
       swig
 
 # Install Python tools/libs
-RUN apt-get -y install \
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt-get -y install \
       python-pip \
  && pip install -U \
       auxlib \
       virtualenv
 
 # sphinx-js dependencies: jsdoc and typedoc (TypeScript support)
-RUN apt-get -y install \
+RUN export DEBIAN_FRONTEND=noninteractive \
+ && apt-get -y install \
       nodejs \
       npm \
  && npm install --global \
       jsdoc \
       typedoc
 
-# UID and GID from readthedocs/user
-RUN groupadd --gid 205 docs
-RUN useradd -m --uid 1005 --gid 205 docs
-
 USER docs
 WORKDIR /home/docs
 
+# Versions, and expose labels for external usage
+ENV PYTHON_VERSION_27=2.7.15 \
+    PYTHON_VERSION_36=3.6.8 \
+    PYTHON_VERSION_37=3.7.2 \
+    CONDA_VERSION=4.5.12
+LABEL python.version_27=$PYTHON_VERSION_27 \
+      python.version_36=$PYTHON_VERSION_36 \
+      python.version_37=$PYTHON_VERSION_37 \
+      conda.version=$CONDA_VERSION
+
 # Install Conda
-RUN curl -O https://repo.continuum.io/miniconda/Miniconda2-${CONDA_VERSION}-Linux-x86_64.sh
-RUN bash Miniconda2-${CONDA_VERSION}-Linux-x86_64.sh -b -p /home/docs/.conda/
-ENV PATH $PATH:/home/docs/.conda/bin
-RUN rm -f Miniconda2-${CONDA_VERSION}-Linux-x86_64.sh
+RUN curl -O https://repo.continuum.io/miniconda/Miniconda2-${CONDA_VERSION}-Linux-x86_64.sh \
+ && bash Miniconda2-${CONDA_VERSION}-Linux-x86_64.sh -b -p /home/docs/.conda/ \
+ && rm -f Miniconda2-${CONDA_VERSION}-Linux-x86_64.sh
+ENV PATH=$PATH:/home/docs/.conda/bin
 
 # Install pyenv
-RUN wget https://github.com/pyenv/pyenv/archive/master.zip
-RUN unzip master.zip && \
-    rm -f master.zip && \
-    mv pyenv-master ~docs/.pyenv
-ENV PYENV_ROOT /home/docs/.pyenv
-ENV PATH /home/docs/.pyenv/shims:$PATH:/home/docs/.pyenv/bin
+RUN curl -L https://github.com/pyenv/pyenv/archive/master.tar.gz \
+  | tar xz \
+ && mv pyenv-master .pyenv
+ENV PYENV_ROOT=/home/docs/.pyenv \
+    PATH=/home/docs/.pyenv/shims:$PATH:/home/docs/.pyenv/bin
 
 # Install supported Python versions
-RUN pyenv install $PYTHON_VERSION_27 && \
-    pyenv install $PYTHON_VERSION_37 && \
-    pyenv install $PYTHON_VERSION_36 && \
-    pyenv global \
-        $PYTHON_VERSION_27 \
-        $PYTHON_VERSION_37 \
-        $PYTHON_VERSION_36
+RUN set -x \
+ && pyenv install "${PYTHON_VERSION_27}" \
+ && pyenv install "${PYTHON_VERSION_37}" \
+ && pyenv install "${PYTHON_VERSION_36}" \
+ && pyenv global \
+      "${PYTHON_VERSION_27}" \
+      "${PYTHON_VERSION_37}" \
+      "${PYTHON_VERSION_36}" \
+ && true
 
-WORKDIR /tmp
-
-RUN pyenv local $PYTHON_VERSION_27 && \
-    pyenv exec pip install --no-cache-dir -U pip && \
-    pyenv exec pip install --no-cache-dir --only-binary numpy,scipy numpy scipy && \
-    pyenv exec pip install --no-cache-dir pandas matplotlib virtualenv
-
-RUN pyenv local $PYTHON_VERSION_37 && \
-    pyenv exec pip install --no-cache-dir -U pip && \
-    pyenv exec pip install --no-cache-dir --only-binary numpy,scipy numpy scipy && \
-    pyenv exec pip install --no-cache-dir pandas matplotlib virtualenv
-
-RUN pyenv local $PYTHON_VERSION_36 && \
-    pyenv exec pip install --no-cache-dir -U pip && \
-    pyenv exec pip install --no-cache-dir --only-binary numpy,scipy numpy scipy && \
-    pyenv exec pip install --no-cache-dir pandas matplotlib virtualenv
+RUN set -x \
+ && cd /tmp \
+ && for env in "${PYTHON_VERSION_27}" "${PYTHON_VERSION_37}" "${PYTHON_VERSION_36}"; \
+    do   pyenv local "${env}" \
+      && pyenv exec pip install --no-cache-dir -U pip \
+      && pyenv exec pip install --no-cache-dir --only-binary numpy,scipy \
+           matplotlib \
+           numpy \
+           pandas \
+           scipy \
+           virtualenv \
+    ; done
 
 WORKDIR /
 
