@@ -153,7 +153,8 @@ ENV RTD_PYTHON_VERSION_38 3.8.0
 ENV RTD_PYPY_VERSION_35 pypy3.5-7.0.0
 
 # Install supported Python versions
-RUN pyenv install $RTD_PYTHON_VERSION_27 && \
+RUN (export PYTHON_CONFIGURE_OPTS="--enable-shared"; \
+    pyenv install $RTD_PYTHON_VERSION_27 && \
     pyenv install $RTD_PYTHON_VERSION_38 && \
     pyenv install $RTD_PYTHON_VERSION_37 && \
     pyenv install $RTD_PYTHON_VERSION_35 && \
@@ -165,7 +166,7 @@ RUN pyenv install $RTD_PYTHON_VERSION_27 && \
         $RTD_PYTHON_VERSION_37 \
         $RTD_PYTHON_VERSION_36 \
         $RTD_PYTHON_VERSION_35 \
-        $RTD_PYPY_VERSION_35
+        $RTD_PYPY_VERSION_35)
 
 WORKDIR /tmp
 
