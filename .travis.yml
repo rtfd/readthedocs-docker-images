@@ -12,7 +12,3 @@ install:
 script:
   - pipenv run pytest --suppress-no-test-exit-code
   - docker build .
-
-branches:
-  only:
-    - master

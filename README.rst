@@ -2,6 +2,11 @@
 Read the Docs - Docker Images
 =============================
 
+|ci-status|
+
+.. |ci-status| image:: https://travis-ci.org/readthedocs/readthedocs-docker-images.svg?branch=master
+    :target: https://travis-ci.org/readthedocs/readthedocs-docker-images
+
 These are the Docker image definitions used by the Read the Docs build
 environments to encapsulate the build process.
 
