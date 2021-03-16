@@ -113,6 +113,15 @@ RUN apt-get -y install \
       plantuml \
       swig
 
+# libgirepository1.0-dev: is to allow installing pygobject and pycairo which compile from source.
+#
+# gir1.2-pango-1.0: is used to render text to support sphinxcontrib-shoebot
+# gir1.2-rsvg-2.0:  is used to output SVGs to support sphinxcontrib-shoebot
+RUN apt-get -y install \
+      libgirepository1.0-dev \
+      gir1.2-pango-1.0 \
+      gir1.2-rsvg-2.0
+
 # Install Python tools/libs
 ENV RTD_VIRTUALENV_VERSION 16.7.9
 RUN apt-get -y install \
