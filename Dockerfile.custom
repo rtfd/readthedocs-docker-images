@@ -1,0 +1,36 @@
+# Read the Docs - On demand Docker image
+# Building example:
+# docker build \
+#   --tag build-123456789 \
+#   --file Dockerfile.custom \
+#   --build-arg RTD_IMAGE=ubuntu20-py39 \
+#   --build-arg RTD_NODE_VERSION=14.16.0 \
+#   --build-arg RTD_RUST_VERSION=1.46.0 \
+#   --build-arg RTD_APT_PACKAGES="swig imagemagick" .
+
+ARG RTD_IMAGE
+FROM readthedocs/build:${RTD_IMAGE}
+
+ARG RTD_NODE_VERSION
+ARG RTD_RUST_VERSION
+ARG RTD_APT_PACKAGES
+
+USER root
+WORKDIR /
+
+# Install extras
+RUN apt-get update
+RUN apt-get install -y ${RTD_APT_PACKAGES}
+
+USER docs
+WORKDIR /home/docs
+
+# Install ``nodejs``
+RUN nodenv install ${RTD_NODE_VERSION}
+RUN nodenv global ${RTD_NODE_VERSION}
+
+# Install ``rust``
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain ${RTD_RUST_VERSION}
+ENV PATH="/home/docs/.cargo/bin:$PATH"
+
+CMD ["/bin/bash"]

@@ -1,0 +1,27 @@
+# Read the Docs - ubuntu20-py39
+FROM readthedocs/build:ubuntu20-base
+
+ENV RTD_PYTHON_VERSION_39 3.9.0
+
+# Install supported Python versions
+RUN pyenv install $RTD_PYTHON_VERSION_39 && \
+    pyenv global $RTD_PYTHON_VERSION_39
+
+WORKDIR /tmp
+
+ENV RTD_PIP_VERSION 21.0.1
+ENV RTD_SETUPTOOLS_VERSION 45.1.0
+ENV RTD_VIRTUALENV_VERSION 20.4.3
+
+RUN pyenv local $RTD_PYTHON_VERSION_39 && \
+    pyenv exec pip install --no-cache-dir -U pip==$RTD_PIP_VERSION && \
+    pyenv exec pip install --no-cache-dir -U setuptools==$RTD_SETUPTOOLS_VERSION && \
+    pyenv exec pip install --no-cache-dir virtualenv==$RTD_VIRTUALENV_VERSION
+
+# Adding labels for external usage
+LABEL python.version_39=$PYTHON_VERSION_39
+LABEL python.pip=$RTD_PIP_VERSION
+LABEL python.setuptools=$SETUPTOOLS_VERSION
+LABEL python.virtualenv=$VIRTUALENV_VERSION
+
+CMD ["/bin/bash"]

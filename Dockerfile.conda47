@@ -1,0 +1,25 @@
+# Read the Docs - ubuntu20-conda47
+FROM readthedocs/build:ubuntu20-base
+
+# Install Conda
+# Note: 4.7.12.1 drastically increases memory usage
+ENV RTD_CONDA_VERSION 4.6.14
+
+WORKDIR /home/docs
+
+# Install supported Python versions
+RUN pyenv install miniconda3-$RTD_CONDA_VERSION && \
+    pyenv global miniconda3-$RTD_CONDA_VERSION
+
+WORKDIR /tmp
+
+ENV RTD_MAMBA_VERSION 0.8.2
+RUN pyenv local miniconda3-$RTD_CONDA_VERSION && \
+    pyenv exec conda install --channel conda-forge mamba==$RTD_MAMBA_VERSION
+
+WORKDIR /home/docs
+
+# Adding labels for external usage
+LABEL conda.version=$RTD_CONDA_VERSION
+
+CMD ["/bin/bash"]

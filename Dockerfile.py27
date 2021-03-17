@@ -1,0 +1,24 @@
+# Read the Docs - ubuntu20-py27
+FROM readthedocs/build:ubuntu20-base
+
+# Define Python versions to be installed via pyenv
+ENV RTD_PYTHON_VERSION_27 2.7.18
+
+# Install supported Python versions
+RUN pyenv install $RTD_PYTHON_VERSION_27 && \
+    pyenv global $RTD_PYTHON_VERSION_27
+
+WORKDIR /tmp
+
+# Python2 dependencies are hardcoded because Python2 is
+# deprecated. Updating them to their latest versions may raise
+# incompatibility issues.
+RUN pyenv local $RTD_PYTHON_VERSION_27 && \
+    pyenv exec pip install --no-cache-dir -U pip==20.0.1 && \
+    pyenv exec pip install --no-cache-dir -U setuptools==44.0.0 && \
+    pyenv exec pip install --no-cache-dir virtualenv==16.7.9
+
+# Adding labels for external usage
+LABEL python.version_27=$PYTHON_VERSION_27
+
+CMD ["/bin/bash"]

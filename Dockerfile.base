@@ -1,0 +1,132 @@
+# Read the Docs - Environment base
+FROM ubuntu:20.04
+LABEL mantainer="Read the Docs <support@readthedocs.com>"
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV APPDIR /app
+ENV LANG C.UTF-8
+
+USER root
+WORKDIR /
+
+# System dependencies
+RUN apt-get -y update
+RUN apt-get -y install \
+      software-properties-common \
+      vim
+
+# Install requirements
+RUN apt-get -y install \
+      build-essential \
+      bzr \
+      curl \
+      doxygen \
+      g++ \
+      git-core \
+      graphviz-dev \
+      libbz2-dev \
+      libcairo2-dev \
+      libenchant1c2a \
+      libevent-dev \
+      libffi-dev \
+      libfreetype6 \
+      libfreetype6-dev \
+      libgraphviz-dev \
+      libjpeg8-dev \
+      libjpeg-dev \
+      liblcms2-dev \
+      libmysqlclient-dev \
+      libpq-dev \
+      libreadline-dev \
+      libsqlite3-dev \
+      libtiff5-dev \
+      libwebp-dev \
+      libxml2-dev \
+      libxslt1-dev \
+      libxslt-dev \
+      mercurial \
+      pandoc \
+      pkg-config \
+      postgresql-client \
+      subversion \
+      zlib1g-dev
+
+
+# LaTeX -- split to reduce image layer size
+RUN apt-get -y install \
+    texlive-fonts-extra
+RUN apt-get -y install \
+    texlive-latex-extra-doc \
+    texlive-pictures-doc \
+    texlive-publishers-doc
+RUN apt-get -y install \
+    texlive-lang-english \
+    texlive-lang-japanese
+RUN apt-get -y install \
+    texlive-full
+
+# lmodern: extra fonts
+# https://github.com/rtfd/readthedocs.org/issues/5494
+#
+# xindy: is useful to generate non-ascii indexes
+# https://github.com/rtfd/readthedocs.org/issues/4454
+#
+# fonts-noto-cjk-extra
+# fonts-hanazono: chinese fonts
+# https://github.com/readthedocs/readthedocs.org/issues/6319
+RUN apt-get -y install \
+    fonts-symbola \
+    lmodern \
+    latex-cjk-chinese-arphic-bkai00mp \
+    latex-cjk-chinese-arphic-gbsn00lp \
+    latex-cjk-chinese-arphic-gkai00mp \
+    texlive-fonts-recommended \
+    fonts-noto-cjk-extra \
+    fonts-hanazono \
+    xindy
+
+# pyenv extra requirements
+# https://github.com/pyenv/pyenv/wiki/Common-build-problems
+RUN apt-get install -y \
+    liblzma-dev \
+    libncurses5-dev \
+    libncursesw5-dev \
+    libssl-dev \
+    llvm \
+    make \
+    python-openssl \
+    tk-dev \
+    wget \
+    xz-utils
+
+# UID and GID from readthedocs/user
+RUN groupadd --gid 205 docs
+RUN useradd -m --uid 1005 --gid 205 docs
+
+USER docs
+WORKDIR /home/docs
+
+# Install pyenv
+RUN wget https://github.com/pyenv/pyenv/archive/master.zip && \
+    unzip master.zip && \
+    rm -f master.zip && \
+    mv pyenv-master ~docs/.pyenv
+ENV PYENV_ROOT /home/docs/.pyenv
+ENV PATH /home/docs/.pyenv/shims:$PATH:/home/docs/.pyenv/bin
+
+# Install nodenv
+RUN wget https://github.com/nodenv/nodenv/archive/master.zip && \
+    unzip master.zip && \
+    rm -f master.zip && \
+    mv nodenv-master ~docs/.nodenv
+RUN cd ~/.nodenv && src/configure && make -C src
+ENV PATH /home/docs/.nodenv/bin:$PATH
+
+# Install node-build
+RUN mkdir /home/docs/.nodenv/plugins
+RUN wget https://github.com/nodenv/node-build/archive/master.zip && \
+    unzip master.zip && \
+    rm -f master.zip && \
+    mv node-build-master ~/.nodenv/plugins/node-build
+
+CMD ["/bin/bash"]
